@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Últimos Logins</title>
+    <!-- Link para o arquivo CSS estático -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <h1>Últimos Logins das Máquinas</h1>
+    <p>Abaixo estão os últimos logins realizados nas máquinas listadas:</p>
+
+    <!-- Tabela para exibir os logins -->
+    <table>
+        <thead>
+            <tr>
+                <th>IP</th>
+                <th>Memória Total (MB)</th>
+                <th>Memória Disponível (MB)</th>
+                <th>Usuários</th>
+                <th>Último Acesso</th>
+                <th>Memória Utilizada (MB)</th>
+            </tr>
+        </thead>
+        <tbody id="logins-body">
+            <!-- Dados serão inseridos via JavaScript -->
+        </tbody>
+    </table>
+
+    <script>
+        // URL da sua API (substitua pelo seu endpoint real)
+        const API_URL = 'https://79c6-200-137-75-2.ngrok-free.app/last_logins';
+
+        // Função para criar células da tabela
+        function createCell(content) {
+            const td = document.createElement('td');
+            if (Array.isArray(content)) {
+                content.forEach(item => {
+                    const div = document.createElement('div');
+                    div.textContent = item;
+                    td.appendChild(div);
+                });
+            } else {
+                td.textContent = content;
+            }
+            return td;
+        }
+
+        // Função para carregar os dados
+        async function loadLogins() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                const tbody = document.getElementById('logins-body');
+                tbody.innerHTML = ''; // Limpa conteúdo anterior
+
+                if (data.length === 0) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 6;
+                    cell.textContent = 'Nenhum login encontrado.';
+                    row.appendChild(cell);
+                    tbody.appendChild(row);
+                    return;
+                }
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    
+                    // IP
+                    row.appendChild(createCell(item.ip));
+                    
+                    // Memória Total
+                    row.appendChild(createCell(item.total));
+                    
+                    // Memória Disponível
+                    row.appendChild(createCell(item.free));
+                    
+                    // Usuários
+                    const users = item.data.map(dt => dt.user);
+                    row.appendChild(createCell(users));
+                    
+                    // Últimos Acessos
+                    const times = item.data.map(dt => dt.time);
+                    row.appendChild(createCell(times));
+                    
+                    // Memória Utilizada
+                    const used = item.data.map(dt => dt.used);
+                    row.appendChild(createCell(used));
+
+                    tbody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                const tbody = document.getElementById('logins-body');
+                tbody.innerHTML = `<tr><td colspan="6">Erro ao carregar dados. Tente novamente mais tarde.</td></tr>`;
+            }
+        }
+
+        // Carrega os dados quando a página carregar
+        document.addEventListener('DOMContentLoaded', loadLogins);
+    </script>
+</body>
+</html>
